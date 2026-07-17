@@ -11,7 +11,14 @@ from flask import (
     url_for,
 ) 
 
-from todos.utils import error_for_list_title, find_list_by_id, error_for_todo_title
+from todos.utils import (
+    delete_todo_by_id,
+    error_for_list_title, 
+    error_for_todo_title,
+    find_list_by_id, 
+    find_todo_by_id,
+    mark_all_completed,
+)
 
 app = Flask(__name__)
 app.secret_key='secret1' #Set up a secret key
@@ -90,6 +97,53 @@ def create_todo(list_id):
     flash("The todo object was added.", "success")
     session.modified = True
     return redirect(url_for('show_list', list_id=list_id)) #from. show_list(list_id)
+
+#Toggle completion status of a todo
+@app.route("/lists/<list_id>/todos/<todo_id>/toggle", methods=["POST"])
+def update_todo_status(list_id, todo_id):
+    lst = find_list_by_id(list_id, session['lists'])
+    if not lst:
+        raise NotFound(description="List not found")
+    
+    todo = find_todo_by_id(todo_id, lst["todos"])
+    if not todo:
+        raise NotFound(description="Todo not found")
+
+    todo['completed'] = (request.form['completed'] == 'True') #'True' becuase submitted HTML form is all strings
+
+    flash("the todo has been updated.", "success")
+    session.modified = True
+    return redirect(url_for('show_list', list_id=list_id))
+
+#Delete a todo item
+@app.route("/lists/<list_id>/todos/<todo_id>/delete", methods=["POST"])
+def delete_todo(list_id, todo_id):
+    lst = find_list_by_id(list_id, session['lists'])
+    if not lst:
+        return NotFound(description= "List not found")
+    
+    todo = find_todo_by_id(todo_id, lst['todos'])
+    if not todo:
+        raise NotFound(description="Todo not found")
+    
+    delete_todo_by_id(todo_id, lst)
+
+    flash("The todo has been deleted", "success")
+    session.modified = True
+    return redirect(url_for('show_list', list_id=list_id))
+
+#Complete all
+@app.route("/lists/<list_id>/complete_all", methods=['POST'])
+def mark_all_todos_completed(list_id):
+    lst = find_list_by_id(list_id, session['lists'])
+    if not lst:
+        return NotFound(description="List not found")
+
+    mark_all_completed(lst)
+
+    flash("All todos have been completed.", "sucess")
+    session.modified = True
+    return redirect(url_for('show_list', list_id=list_id))
 
 if __name__ == "__main__":
     app.run(debug=True, port=5003)
