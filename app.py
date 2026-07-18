@@ -145,5 +145,14 @@ def mark_all_todos_completed(list_id):
     session.modified = True
     return redirect(url_for('show_list', list_id=list_id))
 
+#edit a list 
+@app.route("/lists/<list_id>/edit")
+def edit_list(list_id):
+    lst = find_list_by_id(list_id, session['lists'])
+    if not lst:
+        return NotFound(description="List not found")
+    
+    return render_template('edit_list.html', lst=lst)
+
 if __name__ == "__main__":
     app.run(debug=True, port=5003)
