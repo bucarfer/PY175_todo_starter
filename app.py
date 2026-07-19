@@ -13,15 +13,24 @@ from flask import (
 
 from todos.utils import (
     delete_todo_by_id,
+    delete_list_by_id,
     error_for_list_title, 
     error_for_todo_title,
     find_list_by_id, 
     find_todo_by_id,
+    is_list_completed,
     mark_all_completed,
+    todos_remaining,
 )
 
 app = Flask(__name__)
 app.secret_key='secret1' #Set up a secret key
+
+@app.context_processor
+def list_utilities_processor():
+    return dict(
+        is_list_completed=is_list_completed
+    )
 
 @app.before_request
 def initialize_session():
@@ -39,7 +48,9 @@ def add_todo_list():
 
 @app.route("/lists")
 def get_lists():
-    return render_template('lists.html', lists=session['lists'])
+    return render_template('lists.html',
+                            lists=session['lists'], 
+                            todos_remaining=todos_remaining)
 
 # create a new todo list
 @app.route("/lists", methods=["POST"])
@@ -120,7 +131,7 @@ def update_todo_status(list_id, todo_id):
 def delete_todo(list_id, todo_id):
     lst = find_list_by_id(list_id, session['lists'])
     if not lst:
-        return NotFound(description= "List not found")
+        raise NotFound(description= "List not found")
     
     todo = find_todo_by_id(todo_id, lst['todos'])
     if not todo:
@@ -137,7 +148,7 @@ def delete_todo(list_id, todo_id):
 def mark_all_todos_completed(list_id):
     lst = find_list_by_id(list_id, session['lists'])
     if not lst:
-        return NotFound(description="List not found")
+        raise NotFound(description="List not found")
 
     mark_all_completed(lst)
 
@@ -150,9 +161,41 @@ def mark_all_todos_completed(list_id):
 def edit_list(list_id):
     lst = find_list_by_id(list_id, session['lists'])
     if not lst:
-        return NotFound(description="List not found")
+        raise NotFound(description="List not found")
     
     return render_template('edit_list.html', lst=lst)
+
+#delete list 
+@app.route("/lists/<list_id>/delete", methods=["POST"])
+def delete_list(list_id):
+    lst = find_list_by_id(list_id, session['lists'])
+    if not lst:
+        raise NotFound(description="List not found")
+
+    delete_list_by_id(list_id, session['lists'])
+
+    flash("The list has been deleted.", "success")
+    session.modified = True
+    return redirect(url_for('get_lists'))
+
+#enter new title
+@app.route("/lists/<list_id>", methods=['POST']) 
+def update_list(list_id):
+    title = request.form["list_title"].strip()
+
+    lst = find_list_by_id(list_id, session['lists'])
+    if not lst:
+        raise NotFound(description="List not found")
+    
+    error = error_for_list_title(title, session['lists'])
+    if error:
+        flash(error, "error")
+        return render_template('edit_list.html', lst=lst, title=title)
+    
+    lst['title'] = title
+    flash("The list title has been modified.", "success")
+    session.modified = True
+    return redirect(url_for('show_list', list_id=list_id))
 
 if __name__ == "__main__":
     app.run(debug=True, port=5003)

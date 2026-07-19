@@ -20,9 +20,19 @@ def find_todo_by_id(todo_id, todos):
 
 def delete_todo_by_id(todo_id, lst):
     lst['todos'] = [todo for todo in lst['todos'] if todo['id'] != todo_id]
-    return None
 
 def mark_all_completed(lst):
     for todo in lst['todos']:
         todo['completed'] = True
-    return None # do I need to return None??
+
+def delete_list_by_id(list_id, lists):
+    for idx, lst in enumerate(lists):
+        if lst['id'] == list_id:
+            del lists[idx]
+            break
+
+def todos_remaining(lst):
+    return sum(1 for todo in lst['todos'] if not todo['completed'])
+
+def is_list_completed(lst):
+    return len(lst['todos']) > 0 and todos_remaining(lst) == 0

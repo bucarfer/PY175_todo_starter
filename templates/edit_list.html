@@ -3,18 +3,19 @@
 {% block content %}
     <section id="todos">
         <header>
-            <h2>Editing '{{ lst.title }}'</h2>
-        </header>
-        <ul>
+          <h2>Editing '{{ lst.title }}'</h2>
+          <ul>
             <li>
-                <form class="delete" action="lists/{{ lst.id }}/delete" method="post">
-                    <buttom type="submit" class="delete">Delete List</buttom>
-                </form>
+              <form class="delete" action="{{ url_for('delete_list', list_id=lst.id) }}"
+                    method="post">
+                <button type="submit" class="delete">Delete List</button>
+              </form>
             </li>
-        </ul>
+          </ul>
+        </header>
     </section>
 
-    <form action="/lists/{{ lst.id }}" method="post">
+    <form action="{{ url_for('update_list', list_id=lst.id) }}" method="post">
         <dl>
             <dt>
                 <label for="list_title">Enter a new list title:</label>
@@ -26,7 +27,7 @@
         </dl>
         <fieldset class="actions">
             <input type="submit" value="Save">
-            <a href="{{ url_for ('show_list', list_id=list_id) }}">Cancel</a>
+            <a href="{{ url_for('show_list', list_id=lst.id) }}">Cancel</a>
         </fieldset>        
     </form>
 
